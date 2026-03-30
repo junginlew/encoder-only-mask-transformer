@@ -1,4 +1,6 @@
 import math
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import timm
@@ -59,39 +61,34 @@ class PlainViTBackbone(Backbone):
         메인 모델에서 최종 LayerNorm을 적용할 수 있도록 노출.
         """
         return getattr(self.backbone, 'norm', None)
-
-    def forward_l1(self, x: torch.Tensor) -> torch.Tensor:
+   
+    def forward_l1(self, x: torch.Tensor, rope: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         이미지 패치화 및 L1 블록 통과
         """
         x = self.backbone.patch_embed(x)
         
-        # timm 버전에 따른 위치 임베딩 (메서드 호출 vs 텐서 덧셈)
         if hasattr(self.backbone, '_pos_embed'):
             x = self.backbone._pos_embed(x)
         elif hasattr(self.backbone, 'pos_embed'):
-            # callable이 아닌 텐서이므로 덧셈 연산 수행
-            x = x + self.backbone.pos_embed 
+            x = x + self.backbone.pos_embed
             
         if hasattr(self.backbone, "norm_pre") and getattr(self.backbone, "norm_pre") is not None:
             x = self.backbone.norm_pre(x)
             
-        # L1 블록 순회
+        # 블록 순회 시 rope가 존재하면 명시적으로 주입
         for blk in self.backbone.blocks[:self.l2_start]:
-            x = blk(x)
+            x = blk(x, rope=rope) if rope is not None else blk(x)
             
         return x
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, rope: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         PyTorch 표준 호환성 및 단독 디버깅용 기본 forward 메서드.
         """
-        x = self.forward_l1(x)
-        
+        x = self.forward_l1(x, rope=rope)
         for blk in self.l2_blocks:
-            x = blk(x)
-            
+            x = blk(x, rope=rope) if rope is not None else blk(x)
         if self.norm is not None:
             x = self.norm(x)
-            
         return x
