@@ -10,6 +10,8 @@ model:
 
 criterion:
   _target_: aidall_seg.loss.EoMTLoss
+  num_classes: ???  # experiment yaml에서 override
   class_coefficient: 2.0
   mask_coefficient: 5.0
   dice_coefficient: 5.0
+  no_object_coefficient: 0.1
