@@ -1,0 +1,50 @@
+# @package _global_
+data:
+  train_transforms_cfg:
+    _target_: albumentations.Compose
+    p: 1.0
+    transforms:
+      # 리사이즈: 단변 기준 512로 확대
+      - _target_: albumentations.SmallestMaxSize
+        max_size: 512
+      # 크롭: 512x512 정방형 크롭
+      - _target_: albumentations.RandomCrop
+        height: 512
+        width: 512
+        pad_if_needed: true
+        fill: 0
+        fill_mask: 255
+      # 좌우 반전
+      - _target_: albumentations.HorizontalFlip
+        p: 0.5
+      # 색상/광원 증강
+      - _target_: albumentations.RandomBrightnessContrast
+        brightness_limit: 0.2
+        contrast_limit: 0.2
+        p: 0.8
+      - _target_: albumentations.HueSaturationValue
+        hue_shift_limit: 20
+        sat_shift_limit: 30
+        val_shift_limit: 20
+        p: 0.3
+      # 정규화 및 텐서 변환
+      - _target_: albumentations.Normalize
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]
+      - _target_: albumentations.ToTensorV2
+
+  val_transforms_cfg:
+    _target_: albumentations.Compose
+    transforms:
+      - _target_: albumentations.SmallestMaxSize
+        max_size: 512
+      - _target_: albumentations.CenterCrop
+        height: 512
+        width: 512
+        pad_if_needed: true
+        fill: 0
+        fill_mask: 255
+      - _target_: albumentations.Normalize
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]
+      - _target_: albumentations.ToTensorV2
