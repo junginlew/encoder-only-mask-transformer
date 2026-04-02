@@ -1,1 +1,31 @@
+# @package _global_
+defaults:
+  - override /model: eomt/eomt-vitl
+  - override /data: aidall
+  - /augmentation: eomt_aug
+  - /optimizer: eomt/adamw
+  - override /runtime: gpu
+  - override /callbacks: default
+  - _self_
 
+seed: 42
+optimized_metric: "val/mean_iou"
+
+model:
+  num_classes: 18   # EoMTLightningModule → SegmentationLightningModule (metrics 초기화)
+  model:
+    num_classes: 18  # EoMT (class_head 크기 결정)
+
+data:
+  train_batch_size: 2
+  val_batch_size: 2
+  train_num_workers: 4
+  val_num_workers: 4
+
+callbacks:
+  patience: 20
+
+trainer:
+  max_steps: 160000
+  val_check_interval: 1000
+  accumulate_grad_batches: 32  # # 배치 2장 × 32번 누적 후 업데이트 (effective batch size = 64)
