@@ -26,6 +26,10 @@ data:
 
 callbacks:
   patience: 20
+  early_stopping:
+    monitor: "val/loss_total"
+  model_checkpoint:
+    monitor: "val/loss_total"
 
 trainer:
   max_steps: 160000
