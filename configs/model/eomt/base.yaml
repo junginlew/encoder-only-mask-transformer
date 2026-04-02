@@ -1,12 +1,12 @@
 _target_: aidall_seg.models.EoMTLightningModule
 poly_power: 0.9
-# num_classes는 experiment yaml에서 override
+num_classes: ???  # experiment yaml에서 override
 
 model:
   _target_: aidall_seg.models.EoMT
   num_q: 100
   num_classes: ???  # experiment yaml에서 override
-  # backbone은 하위 파일(eomt-vitl.yaml)에서 정의
+  backbone: ???  # eomt-vitl.yaml에서 override
 
 criterion:
   _target_: aidall_seg.loss.EoMTLoss
