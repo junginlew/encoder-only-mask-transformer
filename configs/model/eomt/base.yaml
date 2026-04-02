@@ -1,1 +1,15 @@
+_target_: aidall_seg.models.EoMTLightningModule
+poly_power: 0.9
+# num_classes는 experiment yaml에서 override
+
+model:
+  _target_: aidall_seg.models.EoMT
+  num_q: 100
+  # backbone, num_classes는 하위 파일(eomt-vitl.yaml)에서 정의
+
+criterion:
+  _target_: aidall_seg.loss.EoMTLoss
+  class_coefficient: 2.0
+  mask_coefficient: 5.0
+  dice_coefficient: 5.0
 
