@@ -12,9 +12,11 @@ seed: 42
 optimized_metric: "val/mean_iou"
 
 model:
-  num_classes: 18   # EoMTLightningModule → SegmentationLightningModule (metrics 초기화)
+  num_classes: 18        # EoMTLightningModule → SegmentationLightningModule (metrics 초기화)
   model:
-    num_classes: 18  # EoMT (class_head 크기 결정)
+    num_classes: 18      # EoMT (class_head 크기 결정)
+  criterion:
+    num_classes: 18      # EoMTLoss (Hungarian matching 클래스 수)
 
 data:
   train_batch_size: 2
