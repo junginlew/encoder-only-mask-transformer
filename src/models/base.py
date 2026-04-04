@@ -521,7 +521,10 @@ class EoMTLightningModule(SegmentationLightningModule):
     
     decoder_attribute_names = ("model.q", "model.class_head", "model.mask_head", "model.upscale")
     
-    def __init__(self, model: nn.Module, poly_power: float = 0.9, *args, **kwargs): #poly_power는 mask annealing의 감소 속도 조절
+    def __init__(self, model: nn.Module, poly_power: float = 0.9,
+                 attn_mask_annealing_start_steps=None,
+                 attn_mask_annealing_end_steps=None,
+                 *args, **kwargs): # poly_power: mask annealing, LR poly decay의 감소 곡선 조절
         super().__init__(*args, **kwargs)
         self.save_hyperparameters(logger=False, ignore=["model", "criterion"])
         self.model = model
@@ -641,18 +644,39 @@ class EoMTLightningModule(SegmentationLightningModule):
 
     def on_train_batch_end(self, outputs, batch, batch_idx):
         model_ref = self.model.module if hasattr(self.model, "module") else self.model
-        
+
         if not getattr(model_ref, "masked_attn_enabled", True):
             return
-            
+
+        if not hasattr(model_ref, "attn_mask_probs"):
+            return
+
         current_step = self.global_step
-        total_steps = self.trainer.estimated_stepping_batches
-        
         poly_power = self.hparams.get("poly_power", 0.9)
-        progress = current_step / max(1, total_steps)
-        decay_prob = max(0.0, (1.0 - progress) ** poly_power)
-        
-        if hasattr(model_ref, "attn_mask_probs"):
+
+        start_steps = self.hparams.get("attn_mask_annealing_start_steps", None)
+        end_steps = self.hparams.get("attn_mask_annealing_end_steps", None)
+
+        num_blocks = len(model_ref.attn_mask_probs)
+
+        if start_steps is not None and end_steps is not None:
+            # 블록별 개별 start/end step으로 annealing (앞 블록이 먼저 0에 도달)
+            for i in range(num_blocks):
+                start = start_steps[i]
+                end = end_steps[i]
+                if current_step < start:
+                    prob = 1.0
+                elif current_step >= end:
+                    prob = 0.0
+                else:
+                    progress = (current_step - start) / (end - start)
+                    prob = max(0.0, (1.0 - progress) ** poly_power)
+                model_ref.attn_mask_probs[i] = prob
+        else:
+            # fallback: 모든 블록 동시에 uniform decay
+            total_steps = self.trainer.estimated_stepping_batches
+            progress = current_step / max(1, total_steps)
+            decay_prob = max(0.0, (1.0 - progress) ** poly_power)
             model_ref.attn_mask_probs.fill_(decay_prob)
 
     def configure_optimizers(self):
