@@ -12,6 +12,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.optim.optimizer import Optimizer
 from torchmetrics import MeanMetric, MetricCollection
 
+from aidall_seg.lr_scheduler import TwoStageWarmupPolySchedule
 from aidall_seg.metrics import MeanIoU, PixelAccuracy, PixelF1
 from aidall_seg.models.utils import (
     create_param_groups_with_differential_lr_and_weight_decay,
@@ -522,6 +523,7 @@ class EoMTLightningModule(SegmentationLightningModule):
     decoder_attribute_names = ("model.q", "model.class_head", "model.mask_head", "model.upscale")
     
     def __init__(self, model: nn.Module, poly_power: float = 0.9,
+                 warmup_steps: list[int] = None,
                  attn_mask_annealing_start_steps=None,
                  attn_mask_annealing_end_steps=None,
                  *args, **kwargs): # poly_power: mask annealing, LR poly decay의 감소 곡선 조절
@@ -687,65 +689,83 @@ class EoMTLightningModule(SegmentationLightningModule):
         optimizer_keywords = optimizer_partial.keywords
         base_lr = optimizer_keywords.get("lr", 1e-4)
         weight_decay = optimizer_keywords.get("weight_decay", 0.0)
-        
-        llrd_decay = optimizer_keywords.get("llrd_decay", 0.9) 
-        
+        llrd_decay = optimizer_keywords.get("llrd_decay", 0.9)
+        llrd_l2_enabled = optimizer_keywords.get("llrd_l2_enabled", False)
+
         model_ref = self.model.module if hasattr(self.model, "module") else self.model
-        
+
         param_groups = []
         decoder_params = []
-        
+
         # Decoder 파라미터 분리 (backbone이 아닌 모든 파라미터)
         for name, param in model_ref.named_parameters():
             if not param.requires_grad:
                 continue
             if not name.startswith("backbone."):
                 decoder_params.append(param)
-        
+
         if decoder_params:
             param_groups.append({"params": decoder_params, "lr": base_lr, "weight_decay": weight_decay})
+
+        num_non_backbone_groups = len(param_groups)  # = 1 (decoder_params)
 
         # Backbone 파라미터 처리
         if hasattr(model_ref, "backbone") and hasattr(model_ref.backbone, "backbone"):
             blocks = model_ref.backbone.backbone.blocks
             num_blocks = len(blocks)
-            
-            # Transformer 블록별 LLRD 적용 (앞쪽 블록일수록 낮은 lr)
+            l2_start = getattr(model_ref.backbone, "l2_start", num_blocks)
+
+            # Transformer 블록별 LLRD 적용
+            # L2 블록(l2_start 이후): llrd_l2_enabled=True면 base_lr 복원
             for i, block in enumerate(blocks):
-                layer_lr = base_lr * (llrd_decay ** (num_blocks - 1 - i))
+                if llrd_l2_enabled and i >= l2_start:
+                    layer_lr = base_lr
+                else:
+                    layer_lr = base_lr * (llrd_decay ** (num_blocks - 1 - i))
                 block_params = [p for p in block.parameters() if p.requires_grad]
                 if block_params:
                     param_groups.append({"params": block_params, "lr": layer_lr, "weight_decay": weight_decay})
-            
+
             # 임베딩 파라미터와 최종 Norm 파라미터 분리
             embed_lr = base_lr * (llrd_decay ** num_blocks)
             embed_params = []
             norm_params = []
-            
+
             for n, p in model_ref.backbone.named_parameters():
                 if not p.requires_grad:
                     continue
-                
-                # 이미 처리된 블록 파라미터 제외
                 if "blocks." in n:
                     continue
-                # Norm 레이어는 base_lr 적용
                 elif n in ["norm.weight", "norm.bias", "backbone.norm.weight", "backbone.norm.bias"]:
                     norm_params.append(p)
-                # 나머지(임베딩, CLS 토큰 등)는 최대 Decay 적용
                 else:
                     embed_params.append(p)
 
-            # 임베딩 그룹 추가 (가장 낮은 LR 적용)
             if embed_params:
                 param_groups.append({"params": embed_params, "lr": embed_lr, "weight_decay": weight_decay})
-                
-            # 최종 Norm 그룹 추가 (base_lr 복원)
             if norm_params:
                 param_groups.append({"params": norm_params, "lr": base_lr, "weight_decay": weight_decay})
 
-        optimizer_kwargs = {k: v for k, v in optimizer_keywords.items() if k not in ["lr", "weight_decay", "llrd_decay"]}
-        optimizer = optimizer_partial.func(param_groups, **optimizer_kwargs) 
+        optimizer_kwargs = {k: v for k, v in optimizer_keywords.items() if k not in ["lr", "weight_decay", "llrd_decay", "llrd_l2_enabled"]}
+        optimizer = optimizer_partial.func(param_groups, **optimizer_kwargs)
+
+        warmup_steps = self.hparams.get("warmup_steps", None)
+        if warmup_steps is not None:
+            scheduler = TwoStageWarmupPolySchedule(
+                optimizer=optimizer,
+                num_non_backbone_groups=num_non_backbone_groups,
+                warmup_steps=warmup_steps,
+                total_steps=self.trainer.max_steps,
+                poly_power=self.hparams.poly_power,
+            )
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": {
+                    "scheduler": scheduler,
+                    "interval": "step",
+                    "frequency": 1,
+                },
+            }
 
         if self.hparams.lr_scheduler:
             scheduler = self.hparams.lr_scheduler(optimizer=optimizer)
