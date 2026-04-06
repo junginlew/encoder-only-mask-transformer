@@ -6,5 +6,6 @@ model:
     lr: 1e-4
     weight_decay: 0.05
     llrd_decay: 0.8
+    llrd_l2_enabled: true
     betas: [0.9, 0.999]
     eps: 1e-8
