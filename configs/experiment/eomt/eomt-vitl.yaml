@@ -17,6 +17,7 @@ model:
     num_classes: 18      # EoMT (class_head 크기 결정)
   criterion:
     num_classes: 18      # EoMTLoss (Hungarian matching 클래스 수)
+  warmup_steps: [500, 1000]  # [non-backbone warmup, backbone warmup]
   attn_mask_annealing_start_steps: [0, 0, 0, 0]
   attn_mask_annealing_end_steps: [40000, 80000, 120000, 160000]
 
