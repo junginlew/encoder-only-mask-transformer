@@ -9,6 +9,7 @@ EoMTLightningModule의 training_step / validation_step / configure_optimizers가
 from __future__ import annotations
 
 import math
+from unittest.mock import patch, PropertyMock
 
 import pytest
 import torch
@@ -170,11 +171,11 @@ def test_mask_annealing_prob_decreases_over_steps(
     module.log = lambda *args, **kwargs: None
     module.log_dict = lambda *args, **kwargs: None
 
-    # Trainer 없이 global_step을 직접 주입
+    # Trainer 없이 global_step을 mock으로 주입 (read-only property라 직접 설정 불가)
     probs_over_time = []
     for step in [0, 30, 60, 100]:
-        module.global_step = step
-        module.on_train_batch_end(None, None, 0)
+        with patch.object(type(module), "global_step", new_callable=PropertyMock, return_value=step):
+            module.on_train_batch_end(None, None, 0)
         probs_over_time.append(eomt_model.attn_mask_probs.clone())
 
     # block 0: end_step=100이므로 step=100에서 prob=0
@@ -185,4 +186,3 @@ def test_mask_annealing_prob_decreases_over_steps(
     for i in range(len(probs_over_time) - 1):
         assert probs_over_time[i][0].item() >= probs_over_time[i + 1][0].item()
         assert probs_over_time[i][1].item() >= probs_over_time[i + 1][1].item()
-
