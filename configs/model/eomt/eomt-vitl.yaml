@@ -1,5 +1,5 @@
 defaults:
-  - base@_here_
+  - /model/eomt/base@_here_
 
 model:
   backbone:
