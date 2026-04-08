@@ -1,9 +1,9 @@
 # @package _global_
 defaults:
-  - override /model: eomt/eomt-vitl
-  - override /data: aidall
   - /augmentation: eomt_aug
   - /optimizer: eomt/adamw
+  - override /model: eomt/eomt-vitl
+  - override /data: aidall
   - override /runtime: gpu
   - override /callbacks: default
   - _self_
