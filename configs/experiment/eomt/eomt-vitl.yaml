@@ -28,9 +28,9 @@ data:
   val_num_workers: 4
 
 callbacks:
-  patience: 20
   early_stopping:
     monitor: "val/loss_total"
+    patience: 20
   model_checkpoint:
     monitor: "val/loss_total"
     filename: "eomt-vitl_epoch_{epoch:03d}"
