@@ -33,6 +33,7 @@ callbacks:
     monitor: "val/loss_total"
   model_checkpoint:
     monitor: "val/loss_total"
+    filename: "eomt-vitl_epoch_{epoch:03d}"
 
 trainer:
   max_steps: 160000
