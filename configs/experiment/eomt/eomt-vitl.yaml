@@ -36,5 +36,5 @@ callbacks:
 
 trainer:
   max_steps: 160000
-  val_check_interval: 1000
-  accumulate_grad_batches: 32  # # 배치 2장 × 32번 누적 후 업데이트 (effective batch size = 64)
+  check_val_every_n_epoch: 1 
+  accumulate_grad_batches: 32  # 배치 2장 × 32번 누적 후 업데이트 (effective batch size = 64)
