@@ -644,6 +644,19 @@ class EoMTLightningModule(SegmentationLightningModule):
         self.log("val/loss_total", self.val_loss, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         self.log_dict(self.val_metrics, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
 
+    def test_step(self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> None:
+        x, y = batch
+        y = self._sanitize_targets(y)
+
+        mask_logits_list, class_logits_list = self(x)
+
+        semantic_logits = self._fuse_to_semantic_logits(mask_logits_list[-1], class_logits_list[-1])
+        if semantic_logits.shape[-2:] != y.shape[-2:]:
+            semantic_logits = F.interpolate(semantic_logits, size=y.shape[-2:], mode="bilinear", align_corners=False)
+
+        self.test_metrics.update(semantic_logits, y)
+        self.log_dict(self.test_metrics, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
+
     def on_train_batch_end(self, outputs, batch, batch_idx):
         model_ref = self.model.module if hasattr(self.model, "module") else self.model
 
