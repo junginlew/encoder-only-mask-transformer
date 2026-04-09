@@ -67,7 +67,11 @@ class PlainViTBackbone(Backbone):
         이미지 패치화 및 L1 블록 통과
         """
         x = self.backbone.patch_embed(x)
-        
+        # dynamic_img_size=True면 patch_embed가 [B, H, W, C]를 반환하므로
+        # 실제 grid_size를 저장해 _predict에서 정확한 reshape에 사용
+        if x.ndim == 4:
+            self._last_grid_size = (x.shape[1], x.shape[2])
+
         if hasattr(self.backbone, '_pos_embed'):
             x = self.backbone._pos_embed(x)
         elif hasattr(self.backbone, 'pos_embed'):
