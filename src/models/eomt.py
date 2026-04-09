@@ -101,7 +101,10 @@ class EoMT(nn.Module):
         num_prefix = getattr(self.backbone.backbone, "num_prefix_tokens", 1)
         x_patches = x[:, self.num_q + num_prefix :, :] 
         
-        grid_size = self.backbone.backbone.patch_embed.grid_size
+        if hasattr(self.backbone, '_last_grid_size'):
+            grid_size = self.backbone._last_grid_size
+        else:
+            grid_size = self.backbone.backbone.patch_embed.grid_size
         x_patches = x_patches.transpose(1, 2).reshape(
             x.shape[0], -1, *grid_size
         ) # (B, C, H', W')
@@ -156,7 +159,10 @@ class EoMT(nn.Module):
         attn_mask = torch.ones(
             x.shape[0], x.shape[1], x.shape[1], dtype=torch.bool, device=x.device
         )
-        grid_size = self.backbone.backbone.patch_embed.grid_size
+        if hasattr(self.backbone, '_last_grid_size'):
+            grid_size = self.backbone._last_grid_size
+        else:
+            grid_size = self.backbone.backbone.patch_embed.grid_size
         interpolated = F.interpolate(mask_logits, grid_size, mode="bilinear")
         interpolated = interpolated.view(interpolated.size(0), interpolated.size(1), -1) # (B, num_q, H'*W')
         
