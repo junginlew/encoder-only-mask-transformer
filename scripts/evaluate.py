@@ -60,8 +60,8 @@ def evaluate(cfg: DictConfig) -> None:
     log.info("Initializing Trainer...")
     trainer: Trainer = instantiate(cfg.trainer, callbacks=callbacks, logger=loggers)
 
-    log.info("Starting Validation...")
-    results = trainer.validate(model, datamodule=datamodule, ckpt_path=ckpt_path)
+    log.info("Starting Evaluation...")
+    results = trainer.test(model, datamodule=datamodule, ckpt_path=ckpt_path)
 
     if results:
         metrics = results[0]
@@ -72,9 +72,9 @@ def evaluate(cfg: DictConfig) -> None:
             print(f"  {key:<30} {value:.4f}")
         print("=" * 50)
 
-        miou = metrics.get("val/mean_iou", None)
-        pixel_acc = metrics.get("val/pixel_acc", None)
-        pixel_f1 = metrics.get("val/pixel_f1", None)
+        miou = metrics.get("test/mean_iou", None)
+        pixel_acc = metrics.get("test/pixel_acc", None)
+        pixel_f1 = metrics.get("test/pixel_f1", None)
 
         print(f"\n  mIoU       : {miou:.4f}" if miou is not None else "  mIoU       : -")
         print(f"  Pixel Acc  : {pixel_acc:.4f}" if pixel_acc is not None else "  Pixel Acc  : -")
