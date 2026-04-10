@@ -72,19 +72,31 @@ def main():
     del segformer
     torch.cuda.empty_cache()
 
-    # EoMT (ViT-L)
     from aidall_seg.models.eomt import EoMT
     from aidall_seg.models.backbones.plain_vit import PlainViTBackbone
 
-    backbone = PlainViTBackbone(
+    # EoMT (ViT-L)
+    backbone_l = PlainViTBackbone(
         backbone_name="vit_large_patch14_reg4_dinov2",
         img_size=512,
         patch_size=16,
         pretrained=False,
     )
-    eomt = EoMT(num_classes=18, num_q=100, backbone=backbone)
-    results["EoMT-ViTL"] = measure_fps(eomt, INPUT_SHAPE, "EoMT-ViTL")
-    del eomt
+    eomt_l = EoMT(num_classes=18, num_q=100, backbone=backbone_l)
+    results["EoMT-ViTL"] = measure_fps(eomt_l, INPUT_SHAPE, "EoMT-ViTL")
+    del eomt_l
+    torch.cuda.empty_cache()
+
+    # EoMT (ViT-B)
+    backbone_b = PlainViTBackbone(
+        backbone_name="vit_base_patch14_reg4_dinov2",
+        img_size=512,
+        patch_size=16,
+        pretrained=False,
+    )
+    eomt_b = EoMT(num_classes=18, num_q=100, backbone=backbone_b)
+    results["EoMT-ViTB"] = measure_fps(eomt_b, INPUT_SHAPE, "EoMT-ViTB")
+    del eomt_b
     torch.cuda.empty_cache()
 
     # 비교 요약
@@ -93,10 +105,11 @@ def main():
     print("=" * 40)
     for name, fps in results.items():
         print(f"  {name:<20}: {fps:.2f} FPS")
-    if len(results) == 2:
-        names = list(results.keys())
-        ratio = results[names[0]] / results[names[1]]
-        print(f"\n  {names[0]} / {names[1]} = {ratio:.2f}x")
+    segformer_fps = results.get("SegFormer-B2")
+    if segformer_fps:
+        for name, fps in results.items():
+            if name != "SegFormer-B2":
+                print(f"\n  SegFormer-B2 / {name} = {segformer_fps / fps:.2f}x")
 
 
 if __name__ == "__main__":
