@@ -99,6 +99,18 @@ def main():
     del eomt_b
     torch.cuda.empty_cache()
 
+    # EoMT (ViT-S)
+    backbone_s = PlainViTBackbone(
+        backbone_name="vit_small_patch14_reg4_dinov2",
+        img_size=512,
+        patch_size=16,
+        pretrained=False,
+    )
+    eomt_s = EoMT(num_classes=18, num_q=100, backbone=backbone_s)
+    results["EoMT-ViTS"] = measure_fps(eomt_s, INPUT_SHAPE, "EoMT-ViTS")
+    del eomt_s
+    torch.cuda.empty_cache()
+
     # 비교 요약
     print("=" * 40)
     print("Summary")
