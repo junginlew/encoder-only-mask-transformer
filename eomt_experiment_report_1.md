@@ -132,7 +132,7 @@ L2 블록(block 20~23)은 query와 함께 새로운 역할을 수행하므로 LL
 | 파라미터 그룹 | lr |
 |---------------|----|
 | Non-backbone (q, class_head, mask_head, upscale) | base_lr = 1e-4 |
-| L2 blocks (20~23, llrd_l2_enabled=True) | base_lr = 1e-4 |
+| L2 blocks (20~23, llrd_l2_exempt=True) | base_lr = 1e-4 |
 | L1 block 19 | base_lr × 0.8^4 |
 | L1 block 18 | base_lr × 0.8^5 |
 | ... | ... |
