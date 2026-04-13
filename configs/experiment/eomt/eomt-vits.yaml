@@ -1,0 +1,63 @@
+# @package _global_
+defaults:
+  - /augmentation: eomt_aug
+  - /optimizer: eomt/adamw
+  - override /model: eomt/eomt-vits
+  - override /data: aidall
+  - override /runtime: gpu
+  - override /callbacks: default
+  - _self_
+
+seed: 42
+optimized_metric: "val/mean_iou"
+
+model:
+  num_classes: 18
+  model:
+    num_classes: 18
+  criterion:
+    num_classes: 18
+  warmup_steps: [500, 1000]
+  attn_mask_annealing_start_steps: [0, 0, 0, 0]
+  attn_mask_annealing_end_steps: [500, 1000, 1500, 2000]
+
+data:
+  train_batch_size: 2
+  val_batch_size: 2
+  train_num_workers: 4
+  val_num_workers: 4
+
+callbacks:
+  early_stopping:
+    monitor: "val/mean_iou"
+    mode: "max"
+    patience: 20
+  model_checkpoint_miou:
+    _target_: lightning.pytorch.callbacks.ModelCheckpoint
+    dirpath: "${paths.output_dir}/checkpoints/"
+    monitor: "val/mean_iou"
+    mode: "max"
+    save_top_k: 5
+    save_last: true
+    filename: "eomt-vits_miou_{val/mean_iou:.4f}_epoch_{epoch:03d}"
+  model_checkpoint_loss:
+    _target_: lightning.pytorch.callbacks.ModelCheckpoint
+    dirpath: "${paths.output_dir}/checkpoints/"
+    monitor: "val/loss_total"
+    mode: "min"
+    save_top_k: 5
+    save_last: false
+    filename: "eomt-vits_loss_{val/loss_total:.4f}_epoch_{epoch:03d}"
+  model_checkpoint_f1:
+    _target_: lightning.pytorch.callbacks.ModelCheckpoint
+    dirpath: "${paths.output_dir}/checkpoints/"
+    monitor: "val/pixel_f1"
+    mode: "max"
+    save_top_k: 5
+    save_last: false
+    filename: "eomt-vits_f1_{val/pixel_f1:.4f}_epoch_{epoch:03d}"
+
+trainer:
+  max_steps: 160000
+  check_val_every_n_epoch: 1
+  accumulate_grad_batches: 32
