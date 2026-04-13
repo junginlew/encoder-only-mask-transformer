@@ -2,7 +2,7 @@
 defaults:
   - /augmentation: eomt_aug
   - /optimizer: eomt/adamw
-  - override /model: eomt/eomt-vits
+  - override /model: eomt/eomt-vitb
   - override /data: aidall
   - override /runtime: gpu
   - override /callbacks: default
@@ -40,7 +40,7 @@ callbacks:
     mode: "max"
     save_top_k: 5
     save_last: true
-    filename: "eomt-vits_miou_{val/mean_iou:.4f}_epoch_{epoch:03d}"
+    filename: "eomt-vitb_miou_{val/mean_iou:.4f}_epoch_{epoch:03d}"
   model_checkpoint_loss:
     _target_: lightning.pytorch.callbacks.ModelCheckpoint
     dirpath: "${paths.output_dir}/checkpoints/"
@@ -48,7 +48,7 @@ callbacks:
     mode: "min"
     save_top_k: 5
     save_last: false
-    filename: "eomt-vits_loss_{val/loss_total:.4f}_epoch_{epoch:03d}"
+    filename: "eomt-vitb_loss_{val/loss_total:.4f}_epoch_{epoch:03d}"
   model_checkpoint_f1:
     _target_: lightning.pytorch.callbacks.ModelCheckpoint
     dirpath: "${paths.output_dir}/checkpoints/"
@@ -56,7 +56,7 @@ callbacks:
     mode: "max"
     save_top_k: 5
     save_last: false
-    filename: "eomt-vits_f1_{val/pixel_f1:.4f}_epoch_{epoch:03d}"
+    filename: "eomt-vitb_f1_{val/pixel_f1:.4f}_epoch_{epoch:03d}"
 
 trainer:
   max_epochs: -1
