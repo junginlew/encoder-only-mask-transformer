@@ -59,6 +59,7 @@ callbacks:
     filename: "eomt-vits_f1_{val/pixel_f1:.4f}_epoch_{epoch:03d}"
 
 trainer:
+  max_epochs: -1
   max_steps: 160000
   check_val_every_n_epoch: 1
   accumulate_grad_batches: 32
