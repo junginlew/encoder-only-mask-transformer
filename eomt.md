@@ -25,7 +25,7 @@ configs/
 │   ├── base.yaml                 ← num_q, poly_power, loss 계수 공통 설정
 │   └── eomt-vitl.yaml            ← ViT-L backbone 설정
 ├── optimizer/eomt/
-│   └── adamw.yaml                ← lr, weight_decay, llrd_decay, llrd_l2_enabled
+│   └── adamw.yaml                ← lr, weight_decay, llrd_decay, llrd_l2_exempt
 ├── augmentation/
 │   └── eomt_aug.yaml             ← Resize/Crop/Flip/Normalize
 └── experiment/eomt/
@@ -134,7 +134,7 @@ fallback (start/end 미설정):
   [0] decoder_params       lr = base_lr          (q, class_head, mask_head, upscale)
   [1] backbone block 0     lr = base_lr × 0.8^23 (L1, 가장 앞)
   ...
-  [20] backbone block 20   lr = base_lr           (L2, llrd_l2_enabled=True면 복원)
+  [20] backbone block 20   lr = base_lr           (L2, llrd_l2_exempt=True면 복원)
   [21] backbone block 21   lr = base_lr
   [22] backbone block 22   lr = base_lr
   [23] backbone block 23   lr = base_lr
@@ -190,7 +190,7 @@ _partial_: true
 lr: 1e-4
 weight_decay: 0.05
 llrd_decay: 0.8
-llrd_l2_enabled: true
+llrd_l2_exempt: true
 betas: [0.9, 0.999]
 eps: 1e-8
 ```
