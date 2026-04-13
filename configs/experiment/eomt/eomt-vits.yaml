@@ -28,6 +28,7 @@ data:
   val_num_workers: 4
 
 callbacks:
+  model_checkpoint: null
   early_stopping:
     monitor: "val/mean_iou"
     mode: "max"
