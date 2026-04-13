@@ -32,7 +32,7 @@ callbacks:
   early_stopping:
     monitor: "val/mean_iou"
     mode: "max"
-    patience: 20
+    patience: 50
   model_checkpoint_miou:
     _target_: lightning.pytorch.callbacks.ModelCheckpoint
     dirpath: "${paths.output_dir}/checkpoints/"
