@@ -703,7 +703,7 @@ class EoMTLightningModule(SegmentationLightningModule):
         base_lr = optimizer_keywords.get("lr", 1e-4)
         weight_decay = optimizer_keywords.get("weight_decay", 0.0)
         llrd_decay = optimizer_keywords.get("llrd_decay", 0.9)
-        llrd_l2_enabled = optimizer_keywords.get("llrd_l2_enabled", False)
+        llrd_l2_exempt = optimizer_keywords.get("llrd_l2_exempt", False)
 
         model_ref = self.model.module if hasattr(self.model, "module") else self.model
 
@@ -729,9 +729,9 @@ class EoMTLightningModule(SegmentationLightningModule):
             l2_start = getattr(model_ref.backbone, "l2_start", num_blocks)
 
             # Transformer 블록별 LLRD 적용
-            # L2 블록(l2_start 이후): llrd_l2_enabled=True면 base_lr 복원
+            # L2 블록(l2_start 이후): llrd_l2_exempt=True면 base_lr 복원
             for i, block in enumerate(blocks):
-                if llrd_l2_enabled and i >= l2_start:
+                if llrd_l2_exempt and i >= l2_start:
                     layer_lr = base_lr
                 else:
                     layer_lr = base_lr * (llrd_decay ** (num_blocks - 1 - i))
@@ -759,7 +759,7 @@ class EoMTLightningModule(SegmentationLightningModule):
             if norm_params:
                 param_groups.append({"params": norm_params, "lr": base_lr, "weight_decay": weight_decay})
 
-        optimizer_kwargs = {k: v for k, v in optimizer_keywords.items() if k not in ["lr", "weight_decay", "llrd_decay", "llrd_l2_enabled"]}
+        optimizer_kwargs = {k: v for k, v in optimizer_keywords.items() if k not in ["lr", "weight_decay", "llrd_decay", "llrd_l2_exempt"]}
         optimizer = optimizer_partial.func(param_groups, **optimizer_kwargs)
 
         warmup_steps = self.hparams.get("warmup_steps", None)
