@@ -1,0 +1,9 @@
+defaults:
+  - /model/eomt/base@_here_
+
+model:
+  backbone:
+    _target_: aidall_seg.models.backbones.PlainViTBackbone
+    backbone_name: vit_small_patch14_reg4_dinov2
+    img_size: 512
+    l2_blocks: 4
