@@ -36,6 +36,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable masked attention annealing before export (required for Hailo DFC compatibility)",
     )
+    parser.add_argument(
+        "--allow-pickle",
+        action="store_true",
+        help="Allow pickle-based checkpoint loading (required for checkpoints containing OmegaConf objects)",
+    )
     return parser.parse_args()
 
 
@@ -48,6 +53,7 @@ def main() -> None:
         model_name=args.model_name,
         model_type=args.model_type,
         model_config_path=args.model_config,
+        allow_pickle=args.allow_pickle,
     )
 
     if args.no_masked_attn:
