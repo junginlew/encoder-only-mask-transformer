@@ -109,9 +109,14 @@ class EoMT(nn.Module):
             x.shape[0], -1, *grid_size
         ) # (B, C, H', W')
 
-        mask_logits = torch.einsum(
-            "bqc, bchw -> bqhw", self.mask_head(q), self.upscale(x_patches)
-        ) # (B, num_q, H, W)
+        mask_queries = self.mask_head(q)
+        mask_features = self.upscale(x_patches)
+        height, width = mask_features.shape[-2:]
+
+        mask_logits = torch.matmul(
+            mask_queries,
+            mask_features.reshape(x.shape[0], mask_features.shape[1], height * width),
+        ).reshape(x.shape[0], self.num_q, height, width) # (B, num_q, H, W)
 
         return mask_logits, class_logits
 
