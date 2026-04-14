@@ -561,8 +561,12 @@ class EoMTLightningModule(SegmentationLightningModule):
     def _fuse_to_semantic_logits(self, mask_logits: torch.Tensor, class_logits: torch.Tensor):
         mask_probs = mask_logits.sigmoid()
         class_probs = class_logits.softmax(dim=-1)[..., :-1]
-        semantic_logits = torch.einsum("bqc,bqhw->bchw", class_probs, mask_probs)
-        return semantic_logits
+        batch_size, num_queries, height, width = mask_probs.shape
+        semantic_logits = torch.matmul(
+            class_probs.transpose(1, 2),
+            mask_probs.reshape(batch_size, num_queries, height * width),
+        )
+        return semantic_logits.reshape(batch_size, class_probs.shape[-1], height, width)
 
     def _calculate_total_loss(self, losses: dict) -> torch.Tensor:
         total_loss = 0.0
