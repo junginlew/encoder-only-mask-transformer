@@ -123,3 +123,7 @@ Dataset: aidall v1.0
 
 해결: `Einsum` → MatMul + Reshape 교체, ONNX export 시 `masked_attn_enabled=False`로 Mask Annealing 비활성화.  
 수정 후 Hailo8 parse level 통과.
+
+## ViT-B 성능 지표 변화
+<img width="1745" height="739" alt="vit-b_train_loss_miou" src="https://github.com/user-attachments/assets/2467fd54-c630-477c-ad9e-cb75e264e4b6" />
+<img width="1695" height="864" alt="vit-b_val_loss_miou" src="https://github.com/user-attachments/assets/89be2d46-98bb-4752-a35c-98c5372ae316" />
