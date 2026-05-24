@@ -103,7 +103,7 @@ model:
 
 `eomt-vitl.yaml`은 여전히 `[40000, 80000, 120000, 160000]`이다. ViT-L은 best가 epoch 265(종료 285), 누적 step ~1,060 수준이라 4개 블록 모두 `prob≈1`(완전 masked)로 학습이 끝났을 가능성이 크다. **그러나 ViT-L은 FPS가 SegFormer 대비 5.36배 느려 Hailo 배포에서 제외**됐고, masked-eval 정확도 레퍼런스(mIoU 74.9%)로만 쓰인다. maskless로 export할 일이 없으므로 train/inference gap이 발생하지 않는다 → **지금 수정 불필요(스킵).** 단, 보고서에서 SegFormer와 공정 비교 시 그 74.9%가 masked-eval 수치임을 명시하는 것이 정직하다. 나중에 ViT-L을 다시 학습할 계획이 생기면 같은 공식으로 당기면 된다.
 
-### 5.3 (선택) 검증을 배포 조건(maskless)으로 맞추기 — 보험 (5.1로 흡수되므로 사실상 불필요)
+### 5.3 (선택) 검증을 배포 조건(maskless)으로 맞추기 — 보험 (5.1로 흡수되므로 사실상 불필요, 적용 안함)
 
 end_steps 캘리브레이션이 빗나가도 안전하게 만드는 보험. `validation_step`에서만 마스크를 끄면 early stopping과 체크포인트 선택이 **배포 동작 기준**으로 best를 고른다. ViT-B의 새 best가 step 950 이후에 나오면 5.1만으로 충분하므로 필수는 아니다.
 
