@@ -19,7 +19,11 @@ model:
     num_classes: 18
   warmup_steps: [500, 1000]
   attn_mask_annealing_start_steps: [0, 0, 0, 0]
-  attn_mask_annealing_end_steps: [500, 1000, 1500, 2000]
+  # was [500, 1000, 1500, 2000] — best ckpt(epoch 394, global_step=1580)에서
+  # block 3의 prob이 0.2455로 남아 maskless export 시 train/inference gap 발생.
+  # S=1580 기준 [0.15S, 0.30S, 0.45S, 0.60S]로 당겨 deepest 블록이
+  # best 시점보다 충분히 앞서 prob=0에 도달하도록 함. 상세: MASK_ANNEALING_ISSUE.md
+  attn_mask_annealing_end_steps: [200, 450, 700, 950]
 
 data:
   train_batch_size: 2
